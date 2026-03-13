@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy"
+  content="
+    default-src 'self';
+    script-src 'self';
+    style-src 'self' https://fonts.googleapis.com;
+    img-src 'self' data:;
+    font-src 'self' https://fonts.gstatic.com;
+  ">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataShop CEO — SQL Story Game</title>
+<!--
+  ╔══════════════════════════════════════════════════════════════╗
+  ║          DataShop CEO — SQL Story Game                       ║
+  ║  © 2026 Kaat Claerman. Alle rechten voorbehouden.            ║
+  ║  Ongeautoriseerde reproductie of distributie is verboden.    ║
+  ║  Dit product is gelicenseerd voor educatief gebruik.         ║
+  ╚══════════════════════════════════════════════════════════════╝
+-->
+<link rel="stylesheet" href="datashop.css">
+
+</head>
+<body>
+
+<!-- ── OVERLAYS ── -->
+<div class="xp-popup" id="xp-popup"></div>
+<div class="ach-toast" id="ach-toast">
+  <div class="toast-icon" id="toast-icon">🏆</div>
+  <div>
+    <div class="toast-label" data-i18n="ach_toast_label">Achievement ontgrendeld</div>
+    <div class="toast-name" id="toast-name"></div>
+  </div>
+</div>
+<div class="streak-popup" id="streak-popup">
+  <span class="streak-popup-icon">🔥</span>
+  <div class="streak-popup-num" id="streak-num-popup">3</div>
+  <div class="streak-popup-label" data-i18n="streak_label">REEKS OP RIJ</div>
+  <div class="streak-popup-bonus" id="streak-bonus-popup"></div>
+</div>
+
+<!-- CHAPTER RECAP MODAL -->
+<div id="chapter-recap-overlay" class="overlay-hidden" role="dialog" aria-modal="true" aria-labelledby="recap-title">
+  <div class="recap-modal">
+    <div class="recap-header">
+      <div class="recap-emoji" id="recap-emoji">🎉</div>
+      <div class="recap-title" id="recap-title">Hoofdstuk voltooid!</div>
+      <div class="recap-subtitle" data-i18n="recap_subtitle">Wat heb je geleerd?</div>
+    </div>
+    <div class="recap-learned-title" data-i18n="recap_learned_title">✦ Concepten onder de knie</div>
+    <div class="recap-concept-list" id="recap-concept-list"></div>
+    <div id="recap-next-wrap" class="recap-next-preview hidden">
+      <div class="recap-next-label" data-i18n="recap_next_label">→ Volgende hoofdstuk</div>
+      <div id="recap-next-text"></div>
+    </div>
+    <div class="recap-action-row">
+      <button class="btn btn-primary btn-sm" data-action="close-recap" data-i18n="recap_continue">Doorgaan →</button>
+    </div>
+  </div>
+</div>
+
+<!-- COMPLETION SCREEN OVERLAY -->
+<div id="completion-overlay" class="overlay-hidden" role="dialog" aria-modal="true" aria-labelledby="comp-title">
+  <div class="comp-bg"></div>
+  <div class="comp-content">
+    <div class="comp-trophy">🏆</div>
+    <div class="comp-eyebrow" data-i18n="comp_eyebrow">DataShop CEO — Voltooid</div>
+    <h1 class="comp-title" id="comp-title"><span data-i18n="comp_title1">Je bent een</span><br><span class="comp-title-accent" data-i18n="comp_title_accent">Data Legende</span></h1>
+    <p class="comp-desc" id="comp-desc"></p>
+    <div class="comp-stats" id="comp-stats"></div>
+    <canvas id="cert-canvas" width="800" height="500"></canvas>
+    <div class="comp-actions">
+      <button class="btn btn-primary btn-cert-download" data-action="download-cert" data-i18n="comp_cert_btn">📜 Certificaat Downloaden</button>
+      <button class="btn btn-outline btn-close-completion" data-action="close-completion" data-i18n="comp_close_btn">Terug naar Dashboard</button>
+    </div>
+    <div class="comp-confetti" id="comp-confetti"></div>
+  </div>
+</div>
+
+<!-- ── BOOT SCREEN ── -->
+<div id="s-boot" class="screen active">
+  <div class="boot-bg"></div>
+  <div class="boot-grid"></div>
+  <div class="boot-noise"></div>
+  <div id="boot-particles"></div>
+
+  <div class="boot-content">
+    <div class="boot-eyebrow" data-i18n="boot_eyebrow">SQL Story Game · v3</div>
+    <h1 class="boot-logo">
+      <span class="line1">DATA</span>
+      <span class="line2">SHOP CEO</span>
+    </h1>
+    <div class="boot-tagline" data-i18n="boot_tagline_build">Build · Query · </div>
+    <p class="boot-desc" data-i18n="boot_desc">Jij runt een startup webshop. Klanten wachten, crises breken los — alleen SQL redt je bedrijf.</p>
+    <div class="boot-features">
+      <div class="boot-feature"><span class="icon">📖</span><span data-i18n="boot_feature_story">Story Mode</span></div>
+      <div class="boot-feature"><span class="icon">⏱️</span><span data-i18n="boot_feature_timers">Timers</span></div>
+      <div class="boot-feature"><span class="icon">🔥</span><span data-i18n="boot_feature_streaks">Streaks</span></div>
+      <div class="boot-feature"><span class="icon">🏢</span><span data-i18n="boot_feature_office">Kantoor Upgrade</span></div>
+      <div class="boot-feature"><span class="icon">🏆</span><span data-i18n="boot_feature_achievements">Achievements</span></div>
+    </div>
+    <div class="boot-form">
+      <div class="boot-name-row">
+        <input class="boot-input" id="boot-name" data-i18n="boot_placeholder" data-i18n-attr="placeholder" placeholder="Jouw naam, CEO..." maxlength="40" autocomplete="off" />
+        <button class="btn btn-primary" data-action="start-game" data-i18n="boot_start_btn">🚀 Starten</button>
+      </div>
+      <button class="btn btn-outline boot-saved-hidden" id="boot-skip-cin" data-action="skip-cin" data-i18n="boot_continue_btn">↩ Verdergaan (intro overslaan)</button>
+    </div>
+    <div id="boot-saved" class="boot-saved boot-saved-hidden"></div>
+    <div class="boot-theme-toggle">
+      <button id="boot-btn-dark"  class="boot-theme-btn active" data-theme="dark" data-i18n="boot_dark">🌙 Dark</button>
+      <button id="boot-btn-light" class="boot-theme-btn"        data-theme="light" data-i18n="boot_light">☀️ Light</button>
+    </div>
+    <div class="boot-lang-toggle">
+      <button class="lang-btn" data-lang="nl">NL</button>
+      <button class="lang-btn" data-lang="en">EN</button>
+    </div>
+  </div>
+
+  <div class="boot-copyright">
+    © 2026 <strong>Kaat Claerman</strong> · <span data-i18n="boot_copyright">Alle rechten voorbehouden · Gelicenseerd voor educatief gebruik</span>
+  </div>
+</div>
+
+<!-- ── CINEMATIC SCREEN ── -->
+<div id="s-cin" class="screen">
+  <div class="cin-bg"></div>
+  <div class="cin-wrap">
+    <div class="cin-eyebrow" id="cin-eyebrow"></div>
+    <div class="cin-title" id="cin-title"></div>
+    <div class="cin-dlg" id="cin-dlg"></div>
+    <div class="cin-act" id="cin-act"></div>
+  </div>
+</div>
+
+<!-- ── GAME SCREEN ── -->
+<div id="s-game" class="screen" role="main">
+  <aside class="sidebar">
+    <div class="sb-brand">
+      <div class="sb-logo-mark">⬡</div>
+      <div>
+        <div class="sb-logo-text">DataShop</div>
+        <div class="sb-logo-sub" data-i18n="sb_logo_sub">CEO Dashboard</div>
+      </div>
+    </div>
+
+    <!-- CEO Card -->
+    <div class="ceo-card">
+      <div class="ceo-row">
+        <div class="ceo-office" id="sb-office">🏠</div>
+        <div class="ceo-meta">
+          <div class="ceo-name" id="sb-name">CEO</div>
+          <div class="ceo-rank" id="sb-rank">Startup CEO</div>
+        </div>
+      </div>
+      <div class="ceo-xp-row">
+        <span class="ceo-xp-label" data-i18n="xp_label">VOORTGANG</span>
+        <span class="ceo-xp-val" id="sb-xp">0 XP</span>
+      </div>
+      <div class="xp-track xp-bar-wrap">
+        <div class="xp-fill" id="xp-fill"></div>
+      </div>
+      <div class="xp-to-next" id="xp-to-next"></div>
+    </div>
+
+    <!-- Streak -->
+    <div class="streak-card" id="streak-card">
+      <span class="streak-icon">🔥</span>
+      <span class="streak-val" id="streak-val">0</span>
+      <div class="streak-info">
+        <div class="streak-label" data-i18n="streak_sidebar">Reeks</div>
+        <div class="streak-shield-row u-hidden" id="shield-row">
+          <span class="shield-icon active">🛡️</span>
+          <span class="shield-count" id="shield-count">0</span>
+          <span class="shield-count-label">shields</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi-tile">
+        <div class="kpi-val" id="kpi-klant">—</div>
+        <div class="kpi-label" data-i18n="kpi_customers">Klanten</div>
+      </div>
+      <div class="kpi-tile">
+        <div class="kpi-val" id="kpi-orders">—</div>
+        <div class="kpi-label" data-i18n="kpi_orders">Orders</div>
+      </div>
+      <div class="kpi-tile">
+        <div class="kpi-val good" id="kpi-rep">100</div>
+        <div class="kpi-label" data-i18n="kpi_reputation">Reputatie</div>
+      </div>
+      <div class="kpi-tile">
+        <div class="kpi-val" id="kpi-xp">0</div>
+        <div class="kpi-label" data-i18n="kpi_xp">XP</div>
+      </div>
+    </div>
+
+    <!-- Reputation bar -->
+    <div class="rep-section">
+      <div class="rep-header">
+        <span data-i18n="rep_label">Reputatie</span>
+        <span id="rep-pct">100%</span>
+      </div>
+      <div class="rep-track">
+        <div class="rep-fill" id="rep-fill"></div>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="sb-nav">
+      <div class="nav-section" data-i18n="nav_section_nav">Navigatie</div>
+      <button class="nav-btn active" id="nav-dash"   data-panel="dash" aria-current="page"><span class="nav-icon">📊</span> <span data-i18n="nav_dashboard">Dashboard</span></button>
+      <button class="nav-btn"        id="nav-sc"     data-panel="sc"><span class="nav-icon">🎯</span> <span data-i18n="nav_missions">Missies</span> <span class="nav-badge" id="nav-badge">0</span></button>
+      <button class="nav-btn"        id="nav-daily"  data-panel="daily"><span class="nav-icon">🌅</span> <span data-i18n="nav_daily">Dagelijkse Uitdaging</span> <span class="nav-badge daily-badge" id="daily-badge">3</span></button>
+      <button class="nav-btn"        id="nav-db"     data-panel="db"><span class="nav-icon">🗄️</span> <span data-i18n="nav_db">Databank</span></button>
+      <button class="nav-btn"        id="nav-term"   data-panel="term"><span class="nav-icon">💻</span> <span data-i18n="nav_terminal">Terminal</span></button>
+      <button class="nav-btn"        id="nav-syn"    data-panel="syn"><span class="nav-icon">📖</span> <span data-i18n="nav_syntax">SQL Syntaxen</span></button>
+      <button class="nav-btn"        id="nav-tut"    data-panel="tut"><span class="nav-icon">🎓</span> <span data-i18n="nav_tutorial">SQL Tutorial</span> <span class="tut-sidebar-progress" id="tut-nav-pct">0%</span></button>
+      <button class="nav-btn"        id="nav-ach"    data-panel="ach"><span class="nav-icon">🏆</span> <span data-i18n="nav_badges">Badges</span></button>
+      <button class="nav-btn"        id="nav-camp"   data-panel="camp"><span class="nav-icon">⚔️</span> <span data-i18n="nav_campaign">Campaign</span></button>
+      <div class="nav-section" data-i18n="nav_section_sys">Systeem</div>
+      <div class="sb-lang-row">
+        <span class="sb-lang-icon">🌐</span>
+        <button class="lang-btn" data-lang="nl">NL</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
+      <button class="nav-btn theme-toggle-btn" id="theme-toggle" data-action="theme-toggle"><span><span class="nav-icon">☀️</span> <span id="theme-label" data-i18n="nav_theme">Light mode</span></span><span id="theme-indicator" class="theme-indicator">OFF</span></button>
+      <button class="nav-btn"        id="nav-set"    data-panel="set"><span class="nav-icon">⚙️</span> <span data-i18n="nav_settings">Instellingen</span></button>
+      <button class="nav-btn u-muted" data-action="open-key-help"><span class="nav-icon">⌨️</span> <span data-i18n="nav_shortcuts">Sneltoetsen</span> <span class="shortcut-badge">?</span></button>
+    </nav>
+
+    <div class="sb-footer">
+      © 2026 Kaat Claerman<br>Alle rechten voorbehouden
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <div class="panel on" id="panel-dash">
+      <div class="ph">
+        <div class="ph-bc" data-i18n="dash_bc">DataShop HQ</div>
+        <h2 data-i18n="dash_title">📊 Dashboard</h2>
+        <p data-i18n="dash_subtitle">Realtime bedrijfsstatus en activiteitsfeed.</p>
+      </div>
+      <div id="office-display"></div>
+      <!-- Tutorial voortgangskaart -->
+      <div class="dash-tut-card" id="dash-tut-card" data-panel="tut" title="Ga naar Tutorial">
+        <div class="dash-tut-icon">🎓</div>
+        <div class="dash-tut-info">
+          <h4>SQL Tutorial</h4>
+          <p class="dash-tut-pct">0/0 lessen · 0%</p>
+          <div class="dash-tut-track"><div class="dash-tut-fill"></div></div>
+        </div>
+        <button class="btn btn-outline btn-sm btn-dash-tut" data-i18n="dash_tut_btn">Ga naar Tutorial →</button>
+      </div>
+      <div class="stat-grid" id="stat-grid"></div>
+      <!-- Concept mastery -->
+      <div class="mastery-section-title" data-i18n="dash_mastery">SQL CONCEPT BEHEERSING</div>
+      <div class="mastery-grid" id="mastery-grid"></div>
+      <!-- Feature 4: Skill Mastery Bars -->
+      <div class="mastery-section-title mastery-section-title--skill">⚡ SKILL MASTERY</div>
+      <div id="skill-mastery-panel" class="skill-mastery-panel"></div>
+      <div class="dash-feed-grid">
+        <div class="feed-box">
+          <div class="feed-head">
+            <span class="feed-title" data-i18n="biz_feed">📈 Bedrijfslog</span>
+            <div class="live-indicator"><div class="live-dot"></div><span data-i18n="feed_live">Live</span></div>
+          </div>
+          <div id="ev-list-biz"></div>
+        </div>
+        <div class="feed-box">
+          <div class="feed-head">
+            <span class="feed-title" data-i18n="sys_feed">⚙️ Systeem &amp; SQL</span>
+          </div>
+          <div id="ev-list-sys"></div>
+        </div>
+      </div>
+      <!-- extra styles moved to datashop.css -->
+    </div>
+
+    <!-- SCENARIOS -->
+    <div class="panel" id="panel-sc">
+      <div class="ph">
+        <div class="ph-bc" data-i18n="sc_bc">Missies</div>
+        <h2 data-i18n="sc_title">🎯 Scenario's</h2>
+        <p data-i18n="sc_subtitle">Elke situatie vereist SQL. De databank verandert live.</p>
+      </div>
+      <div class="progress-row">
+        <div class="progress-track">
+          <div class="progress-fill" id="prog-fill"></div>
+        </div>
+        <div class="progress-label" id="prog-lbl">0/0</div>
+      </div>
+      <div class="ch-tabs" id="ch-tabs"></div>
+      <!-- Zoekbalk -->
+      <div class="sc-search-wrap">
+        <input class="boot-input sc-search-input" id="sc-search" data-i18n="sc_search_placeholder" data-i18n-attr="placeholder" placeholder="🔍  Zoek missie...">
+        <span class="sc-search-icon">🔍</span>
+        <button id="sc-search-clear" class="sc-search-clear" data-action="clear-search">✕</button>
+      </div>
+      <div class="filter-row">
+        <div class="filter-group-label" data-i18n="filter_difficulty">Moeilijkheid</div>
+        <button class="filter-btn active" id="fc-all"    data-filter="all"><span data-i18n="filter_all">Alle</span></button>
+        <button class="filter-btn"        id="fc-easy"   data-filter="easy"><span data-i18n="filter_easy">🟢 Makkelijk</span></button>
+        <button class="filter-btn"        id="fc-medium" data-filter="medium"><span data-i18n="filter_medium">🟠 Gemiddeld</span></button>
+        <button class="filter-btn"        id="fc-hard"   data-filter="hard"><span data-i18n="filter_hard">🔴 Moeilijk</span></button>
+        <button class="filter-btn"        id="fc-done"   data-filter="done"><span data-i18n="filter_done">✅ Voltooid</span></button>
+        <div class="filter-group-label" data-i18n="filter_sqltype">SQL-type</div>
+        <button class="filter-btn"        id="fc-select" data-filter="select">SELECT</button>
+        <button class="filter-btn"        id="fc-join"   data-filter="join">JOIN</button>
+        <button class="filter-btn"        id="fc-insert" data-filter="insert">INSERT</button>
+        <button class="filter-btn"        id="fc-update" data-filter="update">UPDATE</button>
+        <button class="filter-btn"        id="fc-delete" data-filter="delete">DELETE</button>
+        <button class="filter-btn"        id="fc-ddl"    data-filter="ddl">DDL</button>
+      </div>
+      <div id="sc-count-row" class="sc-count-row"></div>
+      <div id="sc-list" class="sc-list-inner" role="list" aria-label="Scenario missies"></div>
+    </div>
+
+    <!-- DATABASE -->
+    <div class="panel" id="panel-db">
+      <div class="ph">
+        <div class="ph-bc" data-i18n="db_bc">Databank</div>
+        <h2 data-i18n="db_title">🗄️ Database Viewer</h2>
+        <p data-i18n="db_subtitle">Live weergave. Wijzigingen zijn direct zichtbaar.</p>
+      </div>
+      <!-- DB Sub-tabs -->
+      <div class="db-subtabs">
+        <button class="db-subtab active" id="dbt-schema" data-dbtab="schema" data-i18n="db_tab_schema">📋 Schema</button>
+        <button class="db-subtab" id="dbt-erd" data-dbtab="erd" data-i18n="db_tab_erd">🔗 ERD Diagram</button>
+        <button class="db-subtab" id="dbt-data" data-dbtab="data" data-i18n="db_tab_data">📊 Data</button>
+      </div>
+      <!-- Table shortcuts -->
+      <div class="db-table-shortcuts" id="db-table-shortcuts">
+        <span class="db-shortcuts-label" data-i18n="db_shortcuts_label">🔗 Snelkoppelingen:</span>
+        <button class="db-shortcut-btn" data-dbtab="data" data-dbtable="klant">👤 klant</button>
+        <button class="db-shortcut-btn" data-dbtab="data" data-dbtable="product">📦 product</button>
+        <button class="db-shortcut-btn" data-dbtab="data" data-dbtable="bestelling">🛒 bestelling</button>
+        <button class="db-shortcut-btn" data-dbtab="data" data-dbtable="review">⭐ review</button>
+        <button class="db-shortcut-btn" data-dbtab="data" data-dbtable="kortingscode">🏷️ kortingscode</button>
+        <button class="db-shortcut-btn" data-dbtab="data" data-dbtable="leverancier">🏭 leverancier</button>
+      </div>
+      <!-- Schema view -->
+      <div id="db-tab-schema">
+        <div class="db-section-label" data-i18n="db_section_schema">Tabelstructuur</div>
+        <div class="schema-grid" id="schema-grid"></div>
+      </div>
+      <!-- ERD view -->
+      <div id="db-tab-erd" class="u-hidden">
+        <div class="db-section-label db-section-label--erd" data-i18n="db_section_erd">Relatiediagram (ERD)</div>
+        <div id="erd-container" class="erd-container"></div>
+        <div class="erd-legend">
+          <span class="erd-leg-item"><span class="erd-leg-pk">🔑 PK</span> = Primary Key</span>
+          <span class="erd-leg-item"><span class="erd-leg-fk">🔗 FK</span> = Foreign Key → verwijst naar PK van andere tabel</span>
+          <span class="erd-leg-item"><span class="erd-leg-rel">──</span> = <span data-i18n="erd_rel">Relatie tussen tabellen</span></span>
+        </div>
+      </div>
+      <!-- Data view -->
+      <div id="db-tab-data" class="u-hidden">
+        <div class="table-viewer">
+          <div class="table-tabs" id="db-tabs"></div>
+          <div class="tv-scroll" id="db-view"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TERMINAL -->
+    <div class="panel" id="panel-term">
+      <div class="ph">
+        <div class="ph-bc" data-i18n="term_bc">Terminal</div>
+        <h2 data-i18n="term_title">💻 Vrije Terminal</h2>
+        <p>Experimenteer vrijuit met SQL. <kbd>Ctrl+Enter</kbd> om uit te voeren · <kbd>↑↓</kbd> voor query-history.</p>
+      </div>
+      <div class="term-examples-section">
+        <div class="term-examples-label" data-i18n="term_examples_label">Klik een voorbeeld om te laden</div>
+        <div class="term-examples-row" id="term-examples">
+          <button class="filter-btn" data-example="0"><span data-i18n="term_ex0">alle klanten</span></button>
+          <button class="filter-btn" data-example="1"><span data-i18n="term_ex1">top 3 duurste</span></button>
+          <button class="filter-btn" data-example="2"><span data-i18n="term_ex2">klanten per stad</span></button>
+          <button class="filter-btn" data-example="3"><span data-i18n="term_ex3">klant + bestelling</span></button>
+          <button class="filter-btn" data-example="4"><span data-i18n="term_ex4">CASE WHEN</span></button>
+          <button class="filter-btn" data-example="5"><span data-i18n="term_ex5">boven gemiddelde prijs</span></button>
+          <button class="filter-btn" data-example="6"><span data-i18n="term_ex6">klanten + bestellingen</span></button>
+        </div>
+      </div>
+      <div class="terminal">
+        <div class="term-titlebar">
+          <div class="term-dots">
+            <div class="term-dot"></div>
+            <div class="term-dot"></div>
+            <div class="term-dot"></div>
+          </div>
+          <span class="term-label">datashop_db@ceo — sql</span>
+        </div>
+        <div class="hl-wrap">
+          <div class="hl-backdrop" id="hl-free" aria-hidden="true"></div>
+          <textarea class="sql-editor" id="free-sql"
+            placeholder="-- SELECT * FROM klant&#10;-- SELECT AVG(prijs) FROM product&#10;-- INSERT INTO klant (naam, email, stad, actief) VALUES ('Test','t@t.be','Gent',1)"></textarea>
+        </div>
+        <div class="term-footer">
+          <span class="term-hint" data-i18n="term_hint">Ctrl+Enter uitvoeren · Tab voor inspringing</span>
+          <button class="btn btn-outline btn-xs" data-action="clear-free" data-i18n="term_clear_btn">Wissen</button>
+          <button class="btn btn-primary btn-sm" data-action="run-free" data-i18n="term_run_btn">▶ Uitvoeren</button>
+        </div>
+      </div>
+      <div class="feedback" id="free-fb"></div>
+      <div class="table-viewer" id="free-out">
+        <div class="free-out-placeholder">
+          // Voer een query uit om resultaten te zien...
+        </div>
+      </div>
+    </div>
+
+    <!-- ACHIEVEMENTS -->
+    <div class="panel" id="panel-ach">
+      <div class="ph">
+        <div class="ph-bc" data-i18n="ach_bc">Badges</div>
+        <h2 data-i18n="ach_title">🏆 Achievements</h2>
+        <p id="ach-progress">0 / 0 ontgrendeld</p>
+      </div>
+      <div class="ach-grid" id="ach-grid"></div>
+    </div>
+
+    <!-- DAILY CHALLENGE -->
+    <div class="panel" id="panel-daily">
+      <div class="ph">
+        <div class="ph-bc" data-i18n="daily_bc">Dagelijkse Uitdaging</div>
+        <h2 data-i18n="daily_title">🌅 Uitdaging van de dag</h2>
+        <p id="daily-subtitle" data-i18n="daily_subtitle">Elke dag een nieuwe SQL-uitdaging. Haal de bonus XP!</p>
+      </div>
+      <div id="daily-content"></div>
+    </div>
+
+    <!-- CAMPAIGN -->
+    <div class="panel" id="panel-camp">
+      <div class="ph">
+        <div class="ph-bc" data-i18n="camp_bc">Campaign</div>
+        <h2 data-i18n="camp_title">⚔️ Campaign Mode</h2>
+        <p data-i18n="camp_subtitle">Story-driven SQL quests. Voltooi ze in volgorde!</p>
+      </div>
+      <div class="progress-row">
+        <div class="progress-track">
+          <div class="progress-fill" id="camp-prog-fill"></div>
+        </div>
+        <div class="progress-label" id="camp-prog-lbl">0/0</div>
+      </div>
+      <div id="camp-content"></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="panel" id="panel-set">
+      <div class="ph">
+        <div class="ph-bc" data-i18n="set_bc">Systeem</div>
+        <h2 data-i18n="set_title">⚙️ Instellingen</h2>
+        <p data-i18n="set_subtitle">Beheer je profiel en voortgang.</p>
+      </div>
+      <div id="set-content"></div>
+    </div>
+
+    <!-- SQL SYNTAXEN -->
+    <div class="panel" id="panel-syn">
+      <div class="ph">
+        <div class="ph-bc" data-i18n="syn_bc">Referentie</div>
+        <h2 data-i18n="syn_title">📖 SQL Syntaxen</h2>
+        <p data-i18n="syn_subtitle">Overzicht van alle SQL-commando's die je nodig hebt als DataShop CEO.</p>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="syn-filter-bar">
+        <button class="syn-filter-btn active" data-filter="all" data-i18n="syn_filter_all">Alles</button>
+        <button class="syn-filter-btn" data-filter="select">SELECT</button>
+        <button class="syn-filter-btn" data-filter="where">WHERE</button>
+        <button class="syn-filter-btn" data-filter="insert">INSERT</button>
+        <button class="syn-filter-btn" data-filter="update">UPDATE</button>
+        <button class="syn-filter-btn" data-filter="delete">DELETE</button>
+        <button class="syn-filter-btn" data-filter="agg">Aggregaten</button>
+        <button class="syn-filter-btn" data-filter="join">JOIN</button>
+        <button class="syn-filter-btn" data-filter="ddl">DDL</button>
+      </div>
+
+      <div class="syn-grid">
+
+        <!-- ── SELECT ── -->
+        <div class="syn-card" data-cat="select">
+          <div class="syn-head">
+            <span class="syn-badge syn-badge-select">SELECT</span>
+            <span class="syn-title">Gegevens opvragen</span>
+          </div>
+          <div class="syn-body">
+            <div class="syn-code"><span class="sc-kw">SELECT</span> kolom1, kolom2
+<span class="sc-kw">FROM</span> tabel
+<span class="sc-kw">WHERE</span> conditie
+<span class="sc-kw">ORDER BY</span> kolom ASC|DESC
+<span class="sc-kw">LIMIT</span> n;</div>
+            <table class="syn-table">
+              <tr><th>Query</th><th>Resultaat</th></tr>
+              <tr><td><code>SELECT * FROM klant</code></td><td>Alle klanten, alle kolommen</td></tr>
+              <tr><td><code>SELECT naam, stad FROM klant</code></td><td>Alleen naam + stad kolommen</td></tr>
+              <tr><td><code>SELECT naam FROM klant WHERE actief = 1</code></td><td>Namen van actieve klanten</td></tr>
+              <tr><td><code>SELECT naam FROM klant ORDER BY naam ASC</code></td><td>Alfabetisch gesorteerd</td></tr>
+              <tr><td><code>SELECT * FROM product ORDER BY prijs DESC LIMIT 3</code></td><td>Top 3 duurste producten</td></tr>
+              <tr><td><code>SELECT naam, email FROM klant WHERE stad = 'Gent'</code></td><td>Klanten uit Gent</td></tr>
+            </table>
+            <div class="syn-tips">
+              <span class="syn-tip">💡 <code>*</code> = alle kolommen. Beter specifieke kolommen noemen voor leesbaarheid.</span>
+              <span class="syn-tip">💡 <code>ASC</code> = laag→hoog (standaard) · <code>DESC</code> = hoog→laag</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── WHERE ── -->
+        <div class="syn-card" data-cat="where">
+          <div class="syn-head">
+            <span class="syn-badge syn-badge-where">WHERE</span>
+            <span class="syn-title">Filteroperatoren</span>
+          </div>
+          <div class="syn-body">
+            <div class="syn-code"><span class="sc-kw">WHERE</span> kolom <span class="sc-kw">=</span> waarde       <span class="sc-comment">-- exact gelijk</span>
+<span class="sc-kw">WHERE</span> kolom <span class="sc-kw">!=</span> waarde      <span class="sc-comment">-- niet gelijk</span>
+<span class="sc-kw">WHERE</span> kolom <span class="sc-kw">&gt;</span> waarde       <span class="sc-comment">-- groter dan</span>
+<span class="sc-kw">WHERE</span> kolom <span class="sc-kw">LIKE</span> '%patroon%'<span class="sc-comment">-- bevat tekst</span>
+<span class="sc-kw">WHERE</span> kolom <span class="sc-kw">IN</span> ('a','b','c') <span class="sc-comment">-- in lijst</span>
+<span class="sc-kw">WHERE</span> kolom <span class="sc-kw">BETWEEN</span> x <span class="sc-kw">AND</span> y  <span class="sc-comment">-- bereik</span>
+<span class="sc-kw">WHERE</span> kolom <span class="sc-kw">IS NULL</span>          <span class="sc-comment">-- leeg veld</span>
+<span class="sc-kw">WHERE</span> c1 <span class="sc-kw">AND</span> c2        <span class="sc-comment">-- beide voorwaarden</span>
+<span class="sc-kw">WHERE</span> c1 <span class="sc-kw">OR</span> c2         <span class="sc-comment">-- één van beide</span></div>
+            <table class="syn-table">
+              <tr><th>Voorbeeld</th><th>Betekenis</th></tr>
+              <tr><td><code>WHERE stad = 'Gent'</code></td><td>Exact Gent</td></tr>
+              <tr><td><code>WHERE prijs &gt; 50</code></td><td>Duurder dan €50</td></tr>
+              <tr><td><code>WHERE naam LIKE '%Jan%'</code></td><td>Naam bevat "Jan"</td></tr>
+              <tr><td><code>WHERE stad IN ('Gent','Brussel')</code></td><td>Gent of Brussel</td></tr>
+              <tr><td><code>WHERE prijs BETWEEN 10 AND 50</code></td><td>€10 t.e.m. €50</td></tr>
+              <tr><td><code>WHERE actief = 1 AND stad = 'Gent'</code></td><td>Actief én uit Gent</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <!-- ── INSERT ── -->
+        <div class="syn-card" data-cat="insert">
+          <div class="syn-head">
+            <span class="syn-badge syn-badge-insert">INSERT</span>
+            <span class="syn-title">Nieuwe rij toevoegen</span>
+          </div>
+          <div class="syn-body">
+            <div class="syn-code"><span class="sc-kw">INSERT INTO</span> tabel (kolom1, kolom2)
+<span class="sc-kw">VALUES</span> (waarde1, waarde2);</div>
+            <table class="syn-table">
+              <tr><th>Query</th><th>Resultaat</th></tr>
+              <tr><td><code>INSERT INTO klant (naam, email, stad, actief)<br>VALUES ('Jana', '<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="81ebc1ece0e8edafe3e4">[email&#160;protected]</a>', 'Gent', 1)</code></td><td>Voegt Jana toe als actieve klant in Gent</td></tr>
+              <tr><td><code>INSERT INTO product (naam, prijs, stock, categorie)<br>VALUES ('Lamp', 29.99, 10, 'Wonen')</code></td><td>Nieuw product "Lamp" voor €29.99 met 10 stuks</td></tr>
+              <tr><td><code>INSERT INTO review (klant_id, product_id, score, commentaar)<br>VALUES (1, 2, 5, 'Top product!')</code></td><td>Klant 1 geeft score 5 aan product 2</td></tr>
+            </table>
+            <div class="syn-tips">
+              <span class="syn-tip">💡 Volgorde kolommen = volgorde waarden. Tekst staat tussen <code>'aanhalingstekens'</code>.</span>
+              <span class="syn-tip">💡 Geen <code>klant_id</code> nodig — AUTO_INCREMENT vult dit automatisch in.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── UPDATE ── -->
+        <div class="syn-card" data-cat="update">
+          <div class="syn-head">
+            <span class="syn-badge syn-badge-update">UPDATE</span>
+            <span class="syn-title">Bestaande rij(en) wijzigen</span>
+          </div>
+          <div class="syn-body">
+            <div class="syn-code"><span class="sc-kw">UPDATE</span> tabel
+<span class="sc-kw">SET</span> kolom = nieuwewaarde
+<span class="sc-kw">WHERE</span> conditie;</div>
+            <table class="syn-table">
+              <tr><th>Query</th><th>Resultaat</th></tr>
+              <tr><td><code>UPDATE product SET prijs = 44.99 WHERE product_id = 2</code></td><td>Wijzigt ALLEEN product 2 → nieuwe prijs €44.99</td></tr>
+              <tr><td><code>UPDATE klant SET actief = 0 WHERE klant_id = 4</code></td><td>Deactiveert ALLEEN klant 4</td></tr>
+              <tr><td><code>UPDATE bestelling SET status = 'geleverd' WHERE bestelling_id = 1</code></td><td>Markeert bestelling 1 als geleverd</td></tr>
+              <tr><td><code>UPDATE product SET stock = 20, prijs = 79.99 WHERE product_id = 5</code></td><td>Meerdere kolommen tegelijk aanpassen</td></tr>
+            </table>
+            <div class="syn-tips">
+              <span class="syn-tip syn-tip-warn">⚠️ ALTIJD WHERE! <code>UPDATE klant SET actief = 0</code> zonder WHERE deactiveert ALLE klanten!</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── DELETE ── -->
+        <div class="syn-card" data-cat="delete">
+          <div class="syn-head">
+            <span class="syn-badge syn-badge-delete">DELETE</span>
+            <span class="syn-title">Rij(en) verwijderen</span>
+          </div>
+          <div class="syn-body">
+            <div class="syn-code"><span class="sc-kw">DELETE FROM</span> tabel
+<span class="sc-kw">WHERE</span> conditie;</div>
+            <table class="syn-table">
+              <tr><th>Query</th><th>Resultaat</th></tr>
+              <tr><td><code>DELETE FROM review WHERE score = 1</code></td><td>Verwijdert alle 1-ster reviews</td></tr>
+              <tr><td><code>DELETE FROM bestelling WHERE datum &lt; '2024-01-01'</code></td><td>Verwijdert bestellingen van vóór 2024</td></tr>
+              <tr><td><code>DELETE FROM kortingscode WHERE actief = 0</code></td><td>Ruimt inactieve kortingscodes op</td></tr>
+            </table>
+            <div class="syn-tips">
+              <span class="syn-tip syn-tip-warn">⚠️ ALTIJD WHERE! <code>DELETE FROM klant</code> verwijdert ALLE klanten — onomkeerbaar!</span>
+              <span class="syn-tip">💡 GDPR tip: gebruik liever <code>UPDATE klant SET actief = 0 WHERE klant_id = x</code> i.p.v. DELETE voor klantdata.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Aggregaten ── -->
+        <div class="syn-card" data-cat="agg">
+          <div class="syn-head">
+            <span class="syn-badge syn-badge-agg">Aggregaten</span>
+            <span class="syn-title">COUNT · SUM · AVG · MAX · MIN</span>
+          </div>
+          <div class="syn-body">
+            <div class="syn-code"><span class="sc-kw">COUNT(*)</span>         <span class="sc-comment">-- aantal rijen</span>
+<span class="sc-kw">SUM(</span>kolom<span class="sc-kw">)</span>       <span class="sc-comment">-- optelling</span>
+<span class="sc-kw">AVG(</span>kolom<span class="sc-kw">)</span>       <span class="sc-comment">-- gemiddelde</span>
+<span class="sc-kw">MAX(</span>kolom<span class="sc-kw">)</span>       <span class="sc-comment">-- grootste waarde</span>
+<span class="sc-kw">MIN(</span>kolom<span class="sc-kw">)</span>       <span class="sc-comment">-- kleinste waarde</span></div>
+            <table class="syn-table">
+              <tr><th>Query</th><th>Resultaat</th></tr>
+              <tr><td><code>SELECT COUNT(*) FROM klant</code></td><td>Hoeveel klanten zijn er totaal?</td></tr>
+              <tr><td><code>SELECT COUNT(*) FROM klant WHERE actief = 1</code></td><td>Hoeveel actieve klanten?</td></tr>
+              <tr><td><code>SELECT AVG(prijs) FROM product</code></td><td>Gemiddelde productprijs</td></tr>
+              <tr><td><code>SELECT MAX(prijs) FROM product</code></td><td>Duurste product</td></tr>
+              <tr><td><code>SELECT MIN(prijs), MAX(prijs) FROM product</code></td><td>Goedkoopste én duurste</td></tr>
+              <tr><td><code>SELECT SUM(prijs * stock) FROM product</code></td><td>Totale voorraadwaarde</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <!-- ── GROUP BY / HAVING ── -->
+        <div class="syn-card" data-cat="agg">
+          <div class="syn-head">
+            <span class="syn-badge syn-badge-agg">GROUP BY</span>
+            <span class="syn-title">Groeperen per categorie</span>
+          </div>
+          <div class="syn-body">
+            <div class="syn-code"><span class="sc-kw">SELECT</span> kolom, <span class="sc-kw">COUNT(*)</span>
+<span class="sc-kw">FROM</span> tabel
+<span class="sc-kw">GROUP BY</span> kolom
+<span class="sc-kw">HAVING</span> COUNT(*) &gt; n;  <span class="sc-comment">-- filter op groep</span></div>
+            <table class="syn-table">
+              <tr><th>Query</th><th>Resultaat</th></tr>
+              <tr><td><code>SELECT klant_id, COUNT(*) FROM bestelling GROUP BY klant_id</code></td><td>Hoeveel bestellingen per klant?</td></tr>
+              <tr><td><code>SELECT categorie, COUNT(*) FROM product GROUP BY categorie</code></td><td>Aantal producten per categorie</td></tr>
+              <tr><td><code>SELECT stad, COUNT(*) FROM klant GROUP BY stad</code></td><td>Aantal klanten per stad</td></tr>
+              <tr><td><code>SELECT categorie, COUNT(*) FROM product GROUP BY categorie HAVING COUNT(*) &gt; 1</code></td><td>Alleen categorieën met meer dan 1 product</td></tr>
+            </table>
+            <div class="syn-tips">
+              <span class="syn-tip">💡 <code>WHERE</code> filtert vóór GROUP BY · <code>HAVING</code> filtert ná GROUP BY (op het groepsresultaat)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── JOIN ── -->
+        <div class="syn-card" data-cat="join">
+          <div class="syn-head">
+            <span class="syn-badge syn-badge-join">JOIN</span>
+            <span class="syn-title">Tabellen koppelen</span>
+          </div>
+          <div class="syn-body">
+            <div class="syn-code"><span class="sc-comment">-- Impliciete JOIN (komma-syntax):</span>
+<span class="sc-kw">SELECT</span> t1.kolom, t2.kolom
+<span class="sc-kw">FROM</span> tabel1 t1, tabel2 t2
+<span class="sc-kw">WHERE</span> t1.fk = t2.pk;</div>
+            <table class="syn-table">
+              <tr><th>Query</th><th>Resultaat</th></tr>
+              <tr><td><code>SELECT k.naam, b.datum, b.status<br>FROM bestelling b, klant k<br>WHERE b.klant_id = k.klant_id</code></td><td>Elke bestelling met de naam van de klant erbij</td></tr>
+              <tr><td><code>SELECT k.naam, p.naam, b.datum<br>FROM bestelling b, klant k, product p<br>WHERE b.klant_id = k.klant_id<br>AND b.product_id = p.product_id</code></td><td>Klantnaam + productnaam + datum voor elke bestelling</td></tr>
+              <tr><td><code>SELECT k.naam, r.score, r.commentaar<br>FROM review r, klant k<br>WHERE r.klant_id = k.klant_id</code></td><td>Reviews met naam van de reviewer</td></tr>
+            </table>
+            <div class="syn-tips">
+              <span class="syn-tip">💡 <code>b</code>, <code>k</code>, <code>p</code> zijn aliassen — kortere namen voor de tabel in de query.</span>
+              <span class="syn-tip">💡 Koppel altijd via FK = PK: <code>b.klant_id = k.klant_id</code></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── ORDER BY / LIMIT ── -->
+        <div class="syn-card" data-cat="select">
+          <div class="syn-head">
+            <span class="syn-badge syn-badge-select">ORDER BY · LIMIT</span>
+            <span class="syn-title">Sorteren en beperken</span>
+          </div>
+          <div class="syn-body">
+            <div class="syn-code"><span class="sc-kw">ORDER BY</span> kolom <span class="sc-kw">ASC</span>   <span class="sc-comment">-- laag → hoog</span>
+<span class="sc-kw">ORDER BY</span> kolom <span class="sc-kw">DESC</span>  <span class="sc-comment">-- hoog → laag</span>
+<span class="sc-kw">LIMIT</span> n               <span class="sc-comment">-- max n rijen</span></div>
+            <table class="syn-table">
+              <tr><th>Query</th><th>Resultaat</th></tr>
+              <tr><td><code>SELECT naam, prijs FROM product ORDER BY prijs ASC</code></td><td>Producten van goedkoopst naar duurste</td></tr>
+              <tr><td><code>SELECT naam, prijs FROM product ORDER BY prijs DESC</code></td><td>Producten van duurste naar goedkoopste</td></tr>
+              <tr><td><code>SELECT naam FROM klant ORDER BY naam ASC LIMIT 3</code></td><td>De eerste 3 klanten alfabetisch</td></tr>
+              <tr><td><code>SELECT naam, stock FROM product ORDER BY stock ASC LIMIT 5</code></td><td>Top 5 producten met laagste stock</td></tr>
+            </table>
+            <div class="syn-tips">
+              <span class="syn-tip">💡 Combineer ORDER BY + LIMIT voor "Top N" queries (bijv. top 3 beste reviews).</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── CREATE TABLE ── -->
+        <div class="syn-card" data-cat="ddl">
+          <div class="syn-head">
+            <span class="syn-badge syn-badge-ddl">CREATE TABLE</span>
+            <span class="syn-title">Nieuwe tabel aanmaken</span>
+          </div>
+          <div class="syn-body">
+            <div class="syn-code"><span class="sc-kw">CREATE TABLE</span> naam (
+  id  <span class="sc-kw">INT PRIMARY KEY AUTO_INCREMENT</span>,
+  kol <span class="sc-kw">VARCHAR(100) NOT NULL</span>,
+  kol <span class="sc-kw">DECIMAL(8,2)</span>,
+  kol <span class="sc-kw">BOOLEAN</span>
+);</div>
+            <table class="syn-table">
+              <tr><th>Query</th><th>Resultaat</th></tr>
+              <tr><td><code>CREATE TABLE leverancier (<br>leverancier_id INT PRIMARY KEY AUTO_INCREMENT,<br>naam VARCHAR(100) NOT NULL,<br>email VARCHAR(150),<br>land VARCHAR(80)<br>)</code></td><td>Nieuwe tabel "leverancier" met auto-ID, verplichte naam, optionele email en land</td></tr>
+            </table>
+            <div class="syn-tips">
+              <span class="syn-tip">💡 <code>NOT NULL</code> = verplicht veld · <code>AUTO_INCREMENT</code> = automatisch oplopend ID</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── ALTER TABLE ── -->
+        <div class="syn-card" data-cat="ddl">
+          <div class="syn-head">
+            <span class="syn-badge syn-badge-ddl">ALTER TABLE</span>
+            <span class="syn-title">Kolom toevoegen aan bestaande tabel</span>
+          </div>
+          <div class="syn-body">
+            <div class="syn-code"><span class="sc-kw">ALTER TABLE</span> tabel
+<span class="sc-kw">ADD COLUMN</span> naam datatype;</div>
+            <table class="syn-table">
+              <tr><th>Query</th><th>Resultaat</th></tr>
+              <tr><td><code>ALTER TABLE klant ADD COLUMN telefoon VARCHAR(20)</code></td><td>Voegt kolom "telefoon" toe — bestaande klanten krijgen NULL</td></tr>
+              <tr><td><code>ALTER TABLE product ADD COLUMN leverancier_id INT</code></td><td>Voegt FK-kolom toe aan product voor koppeling aan leverancier</td></tr>
+            </table>
+            <div class="syn-tips">
+              <span class="syn-tip">💡 Bestaande rijen krijgen automatisch NULL voor de nieuwe kolom.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Datatypes ── -->
+        <div class="syn-card" data-cat="ddl">
+          <div class="syn-head">
+            <span class="syn-badge syn-badge-ddl">Datatypes</span>
+            <span class="syn-title">Welk type voor welke kolom?</span>
+          </div>
+          <div class="syn-body">
+            <table class="syn-table">
+              <tr><th>Type</th><th>Wanneer gebruiken</th><th>Voorbeeld</th></tr>
+              <tr><td><code>VARCHAR(n)</code></td><td>Tekst tot n tekens</td><td>naam VARCHAR(100)</td></tr>
+              <tr><td><code>TEXT</code></td><td>Lange tekst (geen max)</td><td>commentaar TEXT</td></tr>
+              <tr><td><code>INT</code></td><td>Geheel getal</td><td>stock INT</td></tr>
+              <tr><td><code>DECIMAL(p,s)</code></td><td>Kommagetal (p cijfers, s decimalen)</td><td>prijs DECIMAL(8,2)</td></tr>
+              <tr><td><code>BOOLEAN</code></td><td>Ja/nee waarde (1/0)</td><td>actief BOOLEAN</td></tr>
+              <tr><td><code>DATE</code></td><td>Datum (jaar-maand-dag)</td><td>datum DATE</td></tr>
+              <tr><td><code>DATETIME</code></td><td>Datum + tijdstip</td><td>aangemaakt DATETIME</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <!-- ── INNER JOIN / LEFT JOIN ── -->
+        <div class="syn-card" data-cat="join">
+          <div class="syn-head">
+            <span class="syn-badge syn-badge-join">JOIN ... ON</span>
+            <span class="syn-title">Tabellen koppelen (ANSI-standaard)</span>
+          </div>
+          <div class="syn-body">
+            <div class="syn-code"><span class="sc-kw">SELECT</span> t1.kolom, t2.kolom
+<span class="sc-kw">FROM</span> tabel1 t1
+<span class="sc-kw">INNER JOIN</span> tabel2 t2 <span class="sc-kw">ON</span> t1.id = t2.fk_id;
+
+<span class="sc-comment">-- Meerdere JOINs ketenen</span>
+<span class="sc-kw">SELECT</span> k.naam, p.naam, b.datum
+<span class="sc-kw">FROM</span> bestelling b
+<span class="sc-kw">INNER JOIN</span> klant k <span class="sc-kw">ON</span> b.klant_id = k.klant_id
+<span class="sc-kw">INNER JOIN</span> product p <span class="sc-kw">ON</span> b.product_id = p.product_id;</div>
+            <table class="syn-table">
+              <tr><th>JOIN-type</th><th>Wat doet het?</th></tr>
+              <tr><td><code>INNER JOIN</code></td><td>Enkel rijen met een overeenkomst in beide tabellen</td></tr>
+              <tr><td><code>LEFT JOIN</code></td><td>Alle rijen uit de linker tabel, rechts NULL als geen match</td></tr>
+              <tr><td><code>RIGHT JOIN</code></td><td>Alle rijen uit de rechter tabel, links NULL als geen match</td></tr>
+            </table>
+            <div class="syn-tips">
+              <span class="syn-tip">💡 <code>ON</code> specificeert de koppelconditie (FK = PK). Gebruik tabel-aliassen (k, b, p) om korter te schrijven.</span>
+              <span class="syn-tip">💡 Meerdere JOINs ketenen: voeg per JOIN één extra tabel toe met een eigen <code>ON</code>-conditie.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── GROUP BY + HAVING ── -->
+        <div class="syn-card" data-cat="agg">
+          <div class="syn-head">
+            <span class="syn-badge syn-badge-agg">GROUP BY · HAVING</span>
+            <span class="syn-title">Groeperen en filteren op groepen</span>
+          </div>
+          <div class="syn-body">
+            <div class="syn-code"><span class="sc-kw">SELECT</span> kolom, <span class="sc-kw">COUNT</span>(*) <span class="sc-comment">-- of SUM, AVG, MAX, MIN</span>
+<span class="sc-kw">FROM</span> tabel
+<span class="sc-kw">GROUP BY</span> kolom
+<span class="sc-kw">HAVING</span> <span class="sc-kw">COUNT</span>(*) &gt; 1;  <span class="sc-comment">-- filter ná groepering</span></div>
+            <table class="syn-table">
+              <tr><th>Query</th><th>Resultaat</th></tr>
+              <tr><td><code>SELECT categorie, SUM(prijs) FROM product GROUP BY categorie</code></td><td>Totale prijs per categorie</td></tr>
+              <tr><td><code>SELECT status, COUNT(*) FROM bestelling GROUP BY status HAVING COUNT(*) &gt; 1</code></td><td>Enkel statussen met meer dan 1 bestelling</td></tr>
+              <tr><td><code>SELECT stad, COUNT(*) FROM klant GROUP BY stad</code></td><td>Aantal klanten per stad</td></tr>
+            </table>
+            <div class="syn-tips">
+              <span class="syn-tip">⚠️ <strong>WHERE vs HAVING</strong>: WHERE filtert individuele rijen <em>vóór</em> groepering. HAVING filtert groepen <em>na</em> groepering.</span>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- ── NULL / IS NULL ── -->
+        <div class="syn-card" data-cat="where">
+          <div class="syn-head">
+            <span class="syn-badge syn-badge-select">NULL</span>
+            <span class="syn-title">NULL-waarden afhandelen</span>
+          </div>
+          <div class="syn-body">
+            <div class="syn-code"><span class="sc-comment">-- NULL = afwezigheid van waarde</span>
+<span class="sc-kw">WHERE</span> kolom <span class="sc-kw">IS NULL</span>       <span class="sc-comment">-- heeft geen waarde</span>
+<span class="sc-kw">WHERE</span> kolom <span class="sc-kw">IS NOT NULL</span>  <span class="sc-comment">-- heeft wél een waarde</span>
+
+<span class="sc-comment">-- COALESCE: geef eerste niet-NULL waarde</span>
+<span class="sc-kw">COALESCE</span>(kolom, 'Onbekend')</div>
+            <table class="syn-table">
+              <tr><th>Query</th><th>Resultaat</th></tr>
+              <tr><td><code>SELECT naam FROM klant WHERE stad IS NULL</code></td><td>Klanten zonder stad ingevuld</td></tr>
+              <tr><td><code>SELECT naam FROM klant WHERE stad IS NOT NULL</code></td><td>Klanten mét stad</td></tr>
+              <tr><td><code>SELECT naam, COALESCE(stad, 'Onbekend') AS stad FROM klant</code></td><td>NULL vervangt door tekst 'Onbekend'</td></tr>
+            </table>
+            <div class="syn-tips">
+              <span class="syn-tip">⚠️ <code>WHERE stad = NULL</code> werkt NOOIT. Gebruik altijd <code>IS NULL</code>.</span>
+              <span class="syn-tip">💡 <code>COALESCE(a, b, c)</code> geeft de eerste niet-NULL waarde terug uit de lijst.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── CASE WHEN ── -->
+        <div class="syn-card" data-cat="select">
+          <div class="syn-head">
+            <span class="syn-badge syn-badge-select">CASE WHEN</span>
+            <span class="syn-title">Conditionele kolom berekenen</span>
+          </div>
+          <div class="syn-body">
+            <div class="syn-code"><span class="sc-kw">SELECT</span> naam,
+  <span class="sc-kw">CASE</span>
+    <span class="sc-kw">WHEN</span> prijs &lt; 20  <span class="sc-kw">THEN</span> 'Goedkoop'
+    <span class="sc-kw">WHEN</span> prijs &lt; 100 <span class="sc-kw">THEN</span> 'Gemiddeld'
+    <span class="sc-kw">ELSE</span> 'Duur'
+  <span class="sc-kw">END AS</span> prijsklasse
+<span class="sc-kw">FROM</span> product;</div>
+            <table class="syn-table">
+              <tr><th>Query</th><th>Resultaat</th></tr>
+              <tr><td><code>SELECT naam, CASE WHEN actief = 1 THEN 'Actief' ELSE 'Inactief' END AS status FROM klant</code></td><td>Leesbaar label i.p.v. 0/1 voor elke klant</td></tr>
+              <tr><td><code>SELECT naam, CASE WHEN stock = 0 THEN 'Uitverkocht' WHEN stock &lt; 5 THEN 'Bijna op' ELSE 'Op voorraad' END AS voorraad FROM product</code></td><td>Drie mogelijke labels per product</td></tr>
+            </table>
+            <div class="syn-tips">
+              <span class="syn-tip">💡 CASE WHEN werkt als if/else binnen SQL — ideaal voor labels, categorieën en tekstuele weergaven.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── LIKE / IN / BETWEEN ── -->
+        <div class="syn-card" data-cat="where">
+          <div class="syn-head">
+            <span class="syn-badge syn-badge-where">LIKE · IN · BETWEEN</span>
+            <span class="syn-title">Flexibele WHERE-condities</span>
+          </div>
+          <div class="syn-body">
+            <div class="syn-code"><span class="sc-comment">-- LIKE: patroonherkenning</span>
+<span class="sc-kw">WHERE</span> naam <span class="sc-kw">LIKE</span> '%Jan%'     <span class="sc-comment">-- bevat 'Jan'</span>
+<span class="sc-kw">WHERE</span> email <span class="sc-kw">LIKE</span> '%@gmail%'  <span class="sc-comment">-- Gmail-adres</span>
+
+<span class="sc-comment">-- IN: lijst van waarden</span>
+<span class="sc-kw">WHERE</span> stad <span class="sc-kw">IN</span> ('Gent', 'Brussel')
+
+<span class="sc-comment">-- BETWEEN: bereik (inclusief)</span>
+<span class="sc-kw">WHERE</span> prijs <span class="sc-kw">BETWEEN</span> 10 <span class="sc-kw">AND</span> 50</div>
+            <table class="syn-table">
+              <tr><th>Patroon</th><th>Betekenis</th></tr>
+              <tr><td><code>%tekst%</code></td><td>Bevat 'tekst' ergens</td></tr>
+              <tr><td><code>tekst%</code></td><td>Begint met 'tekst'</td></tr>
+              <tr><td><code>%tekst</code></td><td>Eindigt op 'tekst'</td></tr>
+              <tr><td><code>_</code></td><td>Precies één willekeurig teken</td></tr>
+            </table>
+            <div class="syn-tips">
+              <span class="syn-tip">💡 <code>IN ('a','b','c')</code> is korter dan drie OR-condities schrijven.</span>
+              <span class="syn-tip">💡 <code>BETWEEN a AND b</code> is inclusief: a en b zelf worden ook meegenomen.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── SUBQUERY ── -->
+        <div class="syn-card" data-cat="select">
+          <div class="syn-head">
+            <span class="syn-badge syn-badge-select">SUBQUERY</span>
+            <span class="syn-title">Query binnen een query</span>
+          </div>
+          <div class="syn-body">
+            <div class="syn-code"><span class="sc-comment">-- Subquery in WHERE</span>
+<span class="sc-kw">SELECT</span> naam, prijs <span class="sc-kw">FROM</span> product
+<span class="sc-kw">WHERE</span> prijs &gt; (<span class="sc-kw">SELECT AVG</span>(prijs) <span class="sc-kw">FROM</span> product);
+
+<span class="sc-comment">-- Subquery met IN</span>
+<span class="sc-kw">SELECT</span> naam <span class="sc-kw">FROM</span> klant
+<span class="sc-kw">WHERE</span> klant_id <span class="sc-kw">IN</span>
+  (<span class="sc-kw">SELECT</span> klant_id <span class="sc-kw">FROM</span> bestelling);
+
+<span class="sc-comment">-- Subquery met NOT IN</span>
+<span class="sc-kw">SELECT</span> naam <span class="sc-kw">FROM</span> klant
+<span class="sc-kw">WHERE</span> klant_id <span class="sc-kw">NOT IN</span>
+  (<span class="sc-kw">SELECT</span> klant_id <span class="sc-kw">FROM</span> bestelling);</div>
+            <table class="syn-table">
+              <tr><th>Gebruik</th><th>Wat doet het?</th></tr>
+              <tr><td><code>WHERE prijs &gt; (SELECT AVG(prijs) FROM product)</code></td><td>Producten duurder dan het gemiddelde</td></tr>
+              <tr><td><code>WHERE klant_id IN (SELECT klant_id FROM bestelling)</code></td><td>Klanten die minstens één bestelling hebben</td></tr>
+              <tr><td><code>WHERE klant_id NOT IN (SELECT klant_id FROM bestelling)</code></td><td>Klanten die nog NOOIT besteld hebben</td></tr>
+            </table>
+            <div class="syn-tips">
+              <span class="syn-tip">💡 De binnenste query wordt eerst uitgevoerd, dan pas de buitenste.</span>
+              <span class="syn-tip">💡 Gebruik <code>IN</code> voor "zit in de groep" en <code>NOT IN</code> voor "zit er NIET in".</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── DISTINCT ── -->
+        <div class="syn-card" data-cat="select">
+          <div class="syn-head">
+            <span class="syn-badge syn-badge-select">DISTINCT</span>
+            <span class="syn-title">Unieke waarden opvragen</span>
+          </div>
+          <div class="syn-body">
+            <div class="syn-code"><span class="sc-comment">-- Verwijder dubbele rijen uit het resultaat</span>
+<span class="sc-kw">SELECT DISTINCT</span> kolom <span class="sc-kw">FROM</span> tabel;
+
+<span class="sc-comment">-- Tellen hoeveel unieke waarden</span>
+<span class="sc-kw">SELECT COUNT</span>(<span class="sc-kw">DISTINCT</span> kolom) <span class="sc-kw">FROM</span> tabel;</div>
+            <table class="syn-table">
+              <tr><th>Query</th><th>Resultaat</th></tr>
+              <tr><td><code>SELECT DISTINCT stad FROM klant</code></td><td>Alle unieke steden (elke stad maar één keer)</td></tr>
+              <tr><td><code>SELECT DISTINCT categorie FROM product</code></td><td>Alle unieke productcategorieën</td></tr>
+              <tr><td><code>SELECT DISTINCT status FROM bestelling</code></td><td>Welke statussen bestaan er?</td></tr>
+              <tr><td><code>SELECT COUNT(DISTINCT stad) FROM klant</code></td><td>Hoeveel verschillende steden zijn er?</td></tr>
+            </table>
+            <div class="syn-tips">
+              <span class="syn-tip">💡 <code>DISTINCT</code> staat vlak na <code>SELECT</code> — het filtert dubbele rijen uit het eindresultaat.</span>
+              <span class="syn-tip">💡 Combineer met <code>COUNT(DISTINCT ...)</code> om unieke aantallen te tellen.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── AS (aliassen) ── -->
+        <div class="syn-card" data-cat="select">
+          <div class="syn-head">
+            <span class="syn-badge syn-badge-select">AS</span>
+            <span class="syn-title">Aliassen voor kolommen en tabellen</span>
+          </div>
+          <div class="syn-body">
+            <div class="syn-code"><span class="sc-comment">-- Kolom een andere naam geven</span>
+<span class="sc-kw">SELECT</span> prijs <span class="sc-kw">AS</span> verkoopprijs <span class="sc-kw">FROM</span> product;
+
+<span class="sc-comment">-- Tabel een korte naam geven</span>
+<span class="sc-kw">SELECT</span> k.naam, b.datum
+<span class="sc-kw">FROM</span> klant <span class="sc-kw">AS</span> k
+<span class="sc-kw">JOIN</span> bestelling <span class="sc-kw">AS</span> b <span class="sc-kw">ON</span> k.klant_id = b.klant_id;
+
+<span class="sc-comment">-- Berekende kolom een naam geven</span>
+<span class="sc-kw">SELECT</span> naam, prijs * 1.21 <span class="sc-kw">AS</span> prijs_incl_btw <span class="sc-kw">FROM</span> product;</div>
+            <table class="syn-table">
+              <tr><th>Query</th><th>Resultaat</th></tr>
+              <tr><td><code>SELECT naam AS klantnaam FROM klant</code></td><td>Kolom heet "klantnaam" in het resultaat</td></tr>
+              <tr><td><code>SELECT COUNT(*) AS aantal_klanten FROM klant</code></td><td>Teller krijgt een leesbare naam</td></tr>
+              <tr><td><code>SELECT AVG(prijs) AS gemiddelde_prijs FROM product</code></td><td>Gemiddelde prijs met duidelijke kolomnaam</td></tr>
+              <tr><td><code>SELECT prijs * stock AS voorraadwaarde FROM product</code></td><td>Berekening met een eigen naam</td></tr>
+            </table>
+            <div class="syn-tips">
+              <span class="syn-tip">💡 <code>AS</code> is optioneel — <code>SELECT naam klantnaam</code> werkt ook, maar <code>AS</code> is leesbaarder.</span>
+              <span class="syn-tip">💡 Tabelaliassen (k, b, p) zijn essentieel bij JOINs om onduidelijkheid over kolomnamen te vermijden.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── LEFT JOIN ── -->
+        <div class="syn-card" data-cat="join">
+          <div class="syn-head">
+            <span class="syn-badge syn-badge-join">LEFT JOIN</span>
+            <span class="syn-title">Alle rijen uit de linker tabel, ook zonder match</span>
+          </div>
+          <div class="syn-body">
+            <div class="syn-code"><span class="sc-comment">-- INNER JOIN: enkel matches</span>
+<span class="sc-kw">SELECT</span> k.naam, b.datum
+<span class="sc-kw">FROM</span> klant k
+<span class="sc-kw">INNER JOIN</span> bestelling b <span class="sc-kw">ON</span> k.klant_id = b.klant_id;
+
+<span class="sc-comment">-- LEFT JOIN: alle klanten, ook zonder bestelling</span>
+<span class="sc-kw">SELECT</span> k.naam, b.datum
+<span class="sc-kw">FROM</span> klant k
+<span class="sc-kw">LEFT JOIN</span> bestelling b <span class="sc-kw">ON</span> k.klant_id = b.klant_id;</div>
+            <table class="syn-table">
+              <tr><th>JOIN-type</th><th>Resultaat</th></tr>
+              <tr><td><code>INNER JOIN</code></td><td>Enkel klanten MET minstens één bestelling</td></tr>
+              <tr><td><code>LEFT JOIN</code></td><td>Alle klanten — datum is NULL als er geen bestelling is</td></tr>
+            </table>
+            <div class="syn-tips">
+              <span class="syn-tip">💡 Gebruik <code>LEFT JOIN</code> + <code>WHERE b.klant_id IS NULL</code> om klanten te vinden die NOOIT besteld hebben.</span>
+              <span class="syn-tip syn-tip-warn">⚠️ De tabel na <code>FROM</code> is "links", de tabel na <code>LEFT JOIN</code> is "rechts". Alle linkerrijen blijven altijd zichtbaar.</span>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /syn-grid -->
+    </div>
+
+    <!-- TUTORIAL -->
+    <div class="panel" id="panel-tut">
+      <div class="ph">
+        <div class="ph-bc" data-i18n="tut_bc">Leren</div>
+        <h2 data-i18n="tut_title">🎓 SQL Tutorial</h2>
+        <p data-i18n="tut_subtitle">Leer SQL stap voor stap — van nul tot expert. Elke les bevat uitleg, voorbeelden en een oefening.</p>
+      </div>
+      <div id="tut-content"></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- A4 fix: key-help elements moved before script tags -->
+<!-- Keyboard shortcut help -->
+<div id="key-help" class="u-hidden" role="dialog" aria-modal="true" aria-labelledby="key-help-title-el">
+  <div class="key-help-title" id="key-help-title-el" data-i18n="key_help_title">⌨️ Sneltoetsen</div>
+  <table class="key-help-table">
+    <tr><td class="key-help-key">Ctrl + Enter</td><td class="key-help-desc" data-i18n="key_run">SQL uitvoeren</td></tr>
+    <tr><td class="key-help-key">Tab</td><td class="key-help-desc" data-i18n="key_indent">Inspringing in editor</td></tr>
+    <tr><td class="key-help-key">?</td><td class="key-help-desc" data-i18n="key_help_key">Deze helpkaart</td></tr>
+    <tr><td class="key-help-key">Escape</td><td class="key-help-desc" data-i18n="key_escape">Sluit venster / popups</td></tr>
+  </table>
+  <button class="btn btn-outline btn-sm btn-key-help-close" data-action="close-key-help" data-i18n="key_close_btn">Sluiten</button>
+</div>
+<div id="key-help-backdrop" class="u-hidden" data-action="close-key-help"></div>
+
+<script src="translations.js"></script>
+<script src="narrative.js"></script>
+<script src="datashop-engine.js"></script>
+<script src="datashop-data.js"></script>
+<script src="datashop-ui.js"></script>
+<script src="campaign.js"></script>
+<script src="init-lang.js"></script>
+</body>
+</html>
